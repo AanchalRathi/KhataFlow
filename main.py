@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from database import SessionLocal
 from models import Invoice
 from ocr import extract_text_from_image
-from extraction import extract_invoice_fields
+from extraction import extract_from_printed_text
 import shutil
 import os
 
@@ -30,8 +30,7 @@ async def upload_invoice(file: UploadFile = File(...)):
     raw_text = extract_text_from_image(temp_path)
 
     # Gemini extraction
-    extracted_data = extract_invoice_fields(raw_text)
-
+    extracted_data = extract_from_printed_text(raw_text)
     # save to DB
     db = SessionLocal()
     invoice = Invoice(
