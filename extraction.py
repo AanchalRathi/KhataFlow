@@ -1,21 +1,20 @@
-import google.generativeai as genai
+from google import genai
 import os
 import json
 from dotenv import load_dotenv
+from PIL import Image
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-model = genai.GenerativeModel("gemini-2.5-flash")
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-def extract_invoice_fields(raw_text: str) -> dict:
-    prompt = f"""
-You are extracting structured data from an invoice's raw OCR text.
+EXTRACTION_PROMPT = """
+You are extracting structured data from a {doc_type}.
 Return ONLY valid JSON, no markdown formatting, no explanation.
 
 Extract these fields:
 - vendor_name (string)
-- vendor_gstin (string, 15 characters)
+- vendor_gstin (string, 15 characters, if present)
 - invoice_number (string)
 - invoice_date (string, YYYY-MM-DD format if possible)
 - taxable_value (number)
@@ -26,11 +25,36 @@ Extract these fields:
 - total_amount (number)
 - line_items (array of objects with: description, hsn_code, quantity, amount)
 
-If a field is not found, use null.
+If a field is not found or illegible, use null.
+If handwriting is unclear on a field, still provide your best guess.
 
-Raw OCR text:
-{raw_text}
+{content_section}
 """
-    response = model.generate_content(prompt)
+
+def extract_from_printed_text(raw_text: str) -> dict:
+    """For Tesseract-extracted text from printed invoices"""
+    prompt = EXTRACTION_PROMPT.format(
+        doc_type="printed invoice",
+        content_section=f"Raw OCR text:\n{raw_text}"
+    )
+    response = client.models.generate_content(
+        model="gemini-flash-latest",
+        contents=prompt
+    )
+    cleaned = response.text.strip().replace("```json", "").replace("```", "")
+    return json.loads(cleaned)
+
+
+def extract_from_handwritten_image(image_path: str) -> dict:
+    """For handwritten bilty/challan — sends image directly to Gemini"""
+    image = Image.open(image_path)
+    prompt = EXTRACTION_PROMPT.format(
+        doc_type="handwritten bilty/challan document",
+        content_section="Read the handwritten content directly from the attached image."
+    )
+    response = client.models.generate_content(
+        model="gemini-flash-latest",
+        contents=[prompt, image]
+    )
     cleaned = response.text.strip().replace("```json", "").replace("```", "")
     return json.loads(cleaned)
