@@ -22,6 +22,8 @@ Extract these fields:
 - cgst_amount (number)
 - sgst_rate (number, percentage)
 - sgst_amount (number)
+- igst_rate (number, percentage)
+- igst_amount (number)
 - total_amount (number)
 - line_items (array of objects with: description, hsn_code, quantity, amount)
 
