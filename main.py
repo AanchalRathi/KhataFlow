@@ -6,6 +6,10 @@ from models import Invoice, Brand , Shop
 from validation import validate_invoice
 from ocr import extract_text_from_image
 from extraction import extract_from_printed_text, extract_from_handwritten_image
+from ledger import (
+    record_payment, record_remittance,
+    get_brand_balance, get_shop_balance
+)
 import shutil
 import os
 
@@ -22,6 +26,17 @@ class ShopCreate(BaseModel):
     name: str
     gstin: str = None
     location: str = None
+
+class PaymentCreate(BaseModel):
+    shop_id: int
+    amount: float
+    notes: str = None
+
+
+class RemittanceCreate(BaseModel):
+    brand_id: int
+    sale_amount: float
+    notes: str = None
 
 @app.get("/")
 def root():
@@ -106,3 +121,34 @@ def list_shops():
     shops = db.query(Shop).all()
     db.close()
     return shops
+
+@app.post("/payments")
+def create_payment(payment: PaymentCreate):
+    db = SessionLocal()
+    result = record_payment(db, payment.shop_id, payment.amount, payment.notes)
+    db.close()
+    return result
+
+
+@app.post("/remittances")
+def create_remittance(remittance: RemittanceCreate):
+    db = SessionLocal()
+    result = record_remittance(db, remittance.brand_id, remittance.sale_amount, remittance.notes)
+    db.close()
+    return result
+
+
+@app.get("/brands/{brand_id}/balance")
+def brand_balance(brand_id: int):
+    db = SessionLocal()
+    balance = get_brand_balance(db, brand_id)
+    db.close()
+    return {"brand_id": brand_id, "balance_owed": balance}
+
+
+@app.get("/shops/{shop_id}/balance")
+def shop_balance(shop_id: int):
+    db = SessionLocal()
+    balance = get_shop_balance(db, shop_id)
+    db.close()
+    return {"shop_id": shop_id, "balance_owed": balance}
