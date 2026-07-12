@@ -2,13 +2,13 @@ from fastapi import FastAPI, UploadFile, File, Form
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from database import SessionLocal
-from models import Invoice, Brand , Shop
+from models import Invoice, Brand , Shop, BrandInvoice, ShopInvoice
 from validation import validate_invoice
 from ocr import extract_text_from_image
 from extraction import extract_from_printed_text, extract_from_handwritten_image
 from ledger import (
-    record_payment, record_remittance,
-    get_brand_balance, get_shop_balance
+    record_payment, record_remittance, get_brand_balance,
+    get_shop_balance, record_brand_invoice_entry, record_shop_invoice_entry
 )
 import shutil
 import os
@@ -37,6 +37,19 @@ class RemittanceCreate(BaseModel):
     brand_id: int
     sale_amount: float
     notes: str = None
+
+class BrandInvoiceCreate(BaseModel):
+    brand_id: int
+    invoice_number: str
+    invoice_date: str
+    amount: float
+
+
+class ShopInvoiceCreate(BaseModel):
+    shop_id: int
+    invoice_number: str
+    invoice_date: str
+    amount: float
 
 @app.get("/")
 def root():
@@ -152,3 +165,26 @@ def shop_balance(shop_id: int):
     balance = get_shop_balance(db, shop_id)
     db.close()
     return {"shop_id": shop_id, "balance_owed": balance}
+
+@app.post("/brand-invoices")
+def create_brand_invoice(inv: BrandInvoiceCreate):
+    db = SessionLocal()
+    new_inv = BrandInvoice(**inv.dict())
+    db.add(new_inv)
+    db.commit()
+    db.refresh(new_inv)
+    record_brand_invoice_entry(db, new_inv)
+    db.close()
+    return new_inv
+
+
+@app.post("/shop-invoices")
+def create_shop_invoice(inv: ShopInvoiceCreate):
+    db = SessionLocal()
+    new_inv = ShopInvoice(**inv.dict())
+    db.add(new_inv)
+    db.commit()
+    db.refresh(new_inv)
+    record_shop_invoice_entry(db, new_inv)
+    db.close()
+    return new_inv
