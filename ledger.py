@@ -126,3 +126,50 @@ def calculate_commission_and_remit(db: Session, brand_id: int, sale_amount: floa
     }
 
 
+def record_remittance(db: Session, brand_id: int, sale_amount: float, notes: str = None):
+    """Record money paid to a brand after commission deduction, log ledger entry"""
+    split = calculate_commission_and_remit(db, brand_id, sale_amount)
+
+    remittance = Remittance(
+        brand_id=brand_id,
+        amount=split["amount_owed_to_brand"],
+        commission_deducted=split["commission_amount"],
+        notes=notes
+    )
+    db.add(remittance)
+    db.commit()
+    db.refresh(remittance)
+
+    entry = LedgerEntry(
+        party_type="brand",
+        party_id=brand_id,
+        entry_type="remittance",
+        reference_id=remittance.id,
+        amount=-split["amount_owed_to_brand"],  # negative because it reduces what we owe brand
+        description=f"Remittance sent, commission kept: {split['commission_amount']}"
+    )
+    db.add(entry)
+    db.commit()
+
+    return {
+        "remittance_id": remittance.id,
+        **split
+    }
+
+
+def get_brand_balance(db: Session, brand_id: int) -> float:
+    """Sum all ledger entries for a brand — positive means we owe them"""
+    entries = db.query(LedgerEntry).filter(
+        LedgerEntry.party_type == "brand",
+        LedgerEntry.party_id == brand_id
+    ).all()
+    return round(sum(e.amount for e in entries), 2)
+
+
+def get_shop_balance(db: Session, shop_id: int) -> float:
+    """Sum all ledger entries for a shop — positive means they owe us"""
+    entries = db.query(LedgerEntry).filter(
+        LedgerEntry.party_type == "shop",
+        LedgerEntry.party_id == shop_id
+    ).all()
+    return round(sum(e.amount for e in entries), 2)
