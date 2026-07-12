@@ -2,7 +2,7 @@ from google import genai
 import os
 import json
 from dotenv import load_dotenv
-from PIL import Image
+from PIL import Image, ImageOps
 
 load_dotenv()
 
@@ -48,6 +48,7 @@ def extract_from_printed_text(raw_text: str) -> dict:
 def extract_from_handwritten_image(image_path: str) -> dict:
     """For handwritten bilty/challan — sends image directly to Gemini"""
     image = Image.open(image_path)
+    image = ImageOps.exif_transpose(image) 
     prompt = EXTRACTION_PROMPT.format(
         doc_type="handwritten bilty/challan document",
         content_section="Read the handwritten content directly from the attached image."
