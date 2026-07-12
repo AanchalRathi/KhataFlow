@@ -1,7 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from dotenv import load_dotenv
+from pydantic import BaseModel
 from database import SessionLocal
-from models import Invoice
+from models import Invoice, Brand , Shop
 from validation import validate_invoice
 from ocr import extract_text_from_image
 from extraction import extract_from_printed_text, extract_from_handwritten_image
@@ -11,6 +12,16 @@ import os
 load_dotenv()
 
 app = FastAPI(title="KhataFlow")
+
+class BrandCreate(BaseModel):
+    name: str
+    gstin: str = None
+    commission_rate: float = 0.0
+
+class ShopCreate(BaseModel):
+    name: str
+    gstin: str = None
+    location: str = None
 
 @app.get("/")
 def root():
@@ -61,3 +72,37 @@ async def upload_invoice(file: UploadFile = File(...),doc_type: str = Form(...))
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
+
+@app.post("/brands")
+def create_brand(brand: BrandCreate):
+    db = SessionLocal()
+    new_brand = Brand(**brand.dict())
+    db.add(new_brand)
+    db.commit()
+    db.refresh(new_brand)
+    db.close()
+    return new_brand
+
+@app.post("/shops")
+def create_shop(shop: ShopCreate):
+    db = SessionLocal()
+    new_shop = Shop(**shop.dict())
+    db.add(new_shop)
+    db.commit()
+    db.refresh(new_shop)
+    db.close()
+    return new_shop
+
+@app.get("/brands")
+def list_brands():
+    db = SessionLocal()
+    brands = db.query(Brand).all()
+    db.close()
+    return brands
+
+@app.get("/shops")
+def list_shops():
+    db = SessionLocal()
+    shops = db.query(Shop).all()
+    db.close()
+    return shops
