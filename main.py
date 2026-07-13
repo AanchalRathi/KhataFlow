@@ -174,6 +174,7 @@ def create_brand_invoice(inv: BrandInvoiceCreate):
     db.commit()
     db.refresh(new_inv)
     record_brand_invoice_entry(db, new_inv)
+    db.refresh(new_inv)
     db.close()
     return new_inv
 
@@ -186,5 +187,6 @@ def create_shop_invoice(inv: ShopInvoiceCreate):
     db.commit()
     db.refresh(new_inv)
     record_shop_invoice_entry(db, new_inv)
+    db.refresh(new_inv)
     db.close()
     return new_inv
