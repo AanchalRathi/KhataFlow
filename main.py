@@ -169,6 +169,15 @@ def shop_balance(shop_id: int):
 @app.post("/brand-invoices")
 def create_brand_invoice(inv: BrandInvoiceCreate):
     db = SessionLocal()
+
+    existing = db.query(BrandInvoice).filter(
+        BrandInvoice.brand_id == inv.brand_id,
+        BrandInvoice.invoice_number == inv.invoice_number
+    ).first()
+    if existing:
+        db.close()
+        return {"error": f"Invoice {inv.invoice_number} already exists for this brand", "existing_id": existing.id}
+
     new_inv = BrandInvoice(**inv.dict())
     db.add(new_inv)
     db.commit()
@@ -182,6 +191,15 @@ def create_brand_invoice(inv: BrandInvoiceCreate):
 @app.post("/shop-invoices")
 def create_shop_invoice(inv: ShopInvoiceCreate):
     db = SessionLocal()
+
+    existing = db.query(ShopInvoice).filter(
+        ShopInvoice.shop_id == inv.shop_id,
+        ShopInvoice.invoice_number == inv.invoice_number
+    ).first()
+    if existing:
+        db.close()
+        return {"error": f"Invoice {inv.invoice_number} already exists for this shop", "existing_id": existing.id}
+
     new_inv = ShopInvoice(**inv.dict())
     db.add(new_inv)
     db.commit()
