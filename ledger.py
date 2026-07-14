@@ -145,7 +145,7 @@ def record_remittance(db: Session, brand_id: int, sale_amount: float, notes: str
         party_id=brand_id,
         entry_type="remittance",
         reference_id=remittance.id,
-        amount=-split["amount_owed_to_brand"],  # negative because it reduces what we owe brand
+        amount=-sale_amount,
         description=f"Remittance sent, commission kept: {split['commission_amount']}"
     )
     db.add(entry)
