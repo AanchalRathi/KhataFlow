@@ -108,7 +108,10 @@ export default function PaymentsRemittances() {
         )}
       </div>
 
-      <div>
+      <div style={{
+        border: "1px solid var(--rule)", borderRadius: 8, padding: 24,
+        background: "white", marginBottom: 32
+      }}>
         <h3 style={{ fontSize: 20, marginBottom: 16 }}>Send a remittance to a brand</h3>
         <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
           <select style={inputStyle} value={remittanceForm.brand_id}
