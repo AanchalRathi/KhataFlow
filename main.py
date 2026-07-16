@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from database import SessionLocal
 from models import Invoice, Brand , Shop, BrandInvoice, ShopInvoice
 from validation import validate_invoice
@@ -40,12 +40,23 @@ class PaymentCreate(BaseModel):
     shop_id: int
     amount: float
     notes: str = None
-
+    @field_validator("amount")
+    @classmethod
+    def amount_must_be_positive(cls, v):
+        if v <= 0:
+            raise ValueError("Amount must be greater than 0")
+        return v
 
 class RemittanceCreate(BaseModel):
     brand_id: int
     sale_amount: float
     notes: str = None
+    @field_validator("sale_amount")
+    @classmethod
+    def sale_amount_must_be_positive(cls, v):
+        if v <= 0:
+            raise ValueError("Sale amount must be greater than 0")
+        return v
 
 class BrandInvoiceCreate(BaseModel):
     brand_id: int
