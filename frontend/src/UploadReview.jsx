@@ -7,6 +7,13 @@ export default function UploadReview() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const LABELS = {
+    cgst_rate: "CGST Rate", cgst_amount: "CGST Amount",
+    sgst_rate: "SGST Rate", sgst_amount: "SGST Amount",
+    igst_rate: "IGST Rate", igst_amount: "IGST Amount",
+    vendor_gstin: "Vendor GSTIN"
+  };
+
   const handleSubmit = async () => {
     if (!file) return;
     setLoading(true);
@@ -92,7 +99,7 @@ export default function UploadReview() {
               borderBottom: "1px solid var(--rule)"
             }}>
               <span style={{ color: "var(--ink-soft)", fontSize: 14, textTransform: "capitalize" }}>
-                {key.replace(/_/g, " ")}
+                {LABELS[key] || key.replace(/_/g, " ")}
               </span>
               <span className="mono" style={{ fontSize: 14 }}>
                 {value === null ? "—" : String(value)}
