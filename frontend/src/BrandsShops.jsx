@@ -64,7 +64,8 @@ export default function BrandsShops() {
     borderRadius: 4,
     fontFamily: "Inter",
     fontSize: 14,
-    flex: 1
+    flex: 1,
+    background: "var(--paper)"
   };
 
   const buttonStyle = {
@@ -75,13 +76,26 @@ export default function BrandsShops() {
     borderRadius: 4,
     fontFamily: "Inter",
     fontWeight: 500,
-    cursor: "pointer"
+    cursor: "pointer",
+    whiteSpace: "nowrap"
+  };
+
+  const cardStyle = {
+    border: "1px solid var(--rule)",
+    borderRadius: 8,
+    background: "white",
+    overflow: "hidden"
+  };
+
+  const emptyStateStyle = {
+    padding: "32px 24px",
+    textAlign: "center"
   };
 
   return (
     <div>
-      <h2 style={{ fontSize: 28, marginBottom: 8 }}>Brands & Shops</h2>
-      <p style={{ color: "var(--ink-soft)", marginBottom: 24 }}>
+      <h2 style={{ fontSize: 32, marginBottom: 8 }}>Brands & Shops</h2>
+      <p style={{ color: "var(--ink-soft)", marginBottom: 32, fontSize: 15 }}>
         Manage the brands you distribute for and the shops you sell to.
       </p>
 
@@ -109,7 +123,15 @@ export default function BrandsShops() {
 
       {tab === "brands" ? (
         <>
-          <div style={{ display: "flex", gap: 12, marginBottom: 32 }}>
+          <div style={{
+            border: "1px solid var(--rule)",
+            borderRadius: 8,
+            padding: 20,
+            background: "white",
+            marginBottom: 32,
+            display: "flex",
+            gap: 12
+          }}>
             <input style={inputStyle} placeholder="Brand name"
               value={brandForm.name} onChange={(e) => setBrandForm({ ...brandForm, name: e.target.value })} />
             <input style={inputStyle} placeholder="GSTIN (optional)"
@@ -119,19 +141,38 @@ export default function BrandsShops() {
             <button style={buttonStyle} onClick={handleAddBrand}>Add brand</button>
           </div>
 
-          <div style={{ borderTop: "1px solid var(--rule)" }}>
-            {brands.length === 0 && <p style={{ color: "var(--ink-soft)", padding: "16px 0", fontSize: 14 }}>No brands added yet.</p>}
-            {brands.map((b) => (
-              <div key={b.id} style={{ display: "flex", justifyContent: "space-between", padding: "14px 0", borderBottom: "1px solid var(--rule)" }}>
+          <div style={cardStyle}>
+            {brands.length === 0 && (
+              <div style={emptyStateStyle}>
+                <p style={{ color: "var(--ink-soft)", fontSize: 14, margin: 0 }}>No brands added yet.</p>
+              </div>
+            )}
+            {brands.map((b, i) => (
+              <div key={b.id} style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "14px 20px",
+                borderBottom: i < brands.length - 1 ? "1px solid var(--rule)" : "none"
+              }}>
                 <span style={{ fontSize: 15 }}>{b.name}</span>
-                <span className="mono" style={{ fontSize: 14, color: "var(--ink-soft)" }}>{b.commission_rate}% commission</span>
+                <span className="mono" style={{ fontSize: 14, color: "var(--ink-soft)" }}>
+                  {b.commission_rate}% commission
+                </span>
               </div>
             ))}
           </div>
         </>
       ) : (
         <>
-          <div style={{ display: "flex", gap: 12, marginBottom: 32 }}>
+          <div style={{
+            border: "1px solid var(--rule)",
+            borderRadius: 8,
+            padding: 20,
+            background: "white",
+            marginBottom: 32,
+            display: "flex",
+            gap: 12
+          }}>
             <input style={inputStyle} placeholder="Shop name"
               value={shopForm.name} onChange={(e) => setShopForm({ ...shopForm, name: e.target.value })} />
             <input style={inputStyle} placeholder="GSTIN (optional)"
@@ -141,12 +182,23 @@ export default function BrandsShops() {
             <button style={buttonStyle} onClick={handleAddShop}>Add shop</button>
           </div>
 
-          <div style={{ borderTop: "1px solid var(--rule)" }}>
-            {shops.length === 0 && <p style={{ color: "var(--ink-soft)", padding: "16px 0", fontSize: 14 }}>No shops added yet.</p>}
-            {shops.map((s) => (
-              <div key={s.id} style={{ display: "flex", justifyContent: "space-between", padding: "14px 0", borderBottom: "1px solid var(--rule)" }}>
+          <div style={cardStyle}>
+            {shops.length === 0 && (
+              <div style={emptyStateStyle}>
+                <p style={{ color: "var(--ink-soft)", fontSize: 14, margin: 0 }}>No shops added yet.</p>
+              </div>
+            )}
+            {shops.map((s, i) => (
+              <div key={s.id} style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "14px 20px",
+                borderBottom: i < shops.length - 1 ? "1px solid var(--rule)" : "none"
+              }}>
                 <span style={{ fontSize: 15 }}>{s.name}</span>
-                <span className="mono" style={{ fontSize: 14, color: "var(--ink-soft)" }}>{s.location || "—"}</span>
+                <span className="mono" style={{ fontSize: 14, color: "var(--ink-soft)" }}>
+                  {s.location || "—"}
+                </span>
               </div>
             ))}
           </div>
