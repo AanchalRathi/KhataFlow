@@ -83,7 +83,10 @@ export default function PaymentsRemittances() {
     <div>
       <h2 style={{ fontSize: 28, marginBottom: 32 }}>Payments & Remittances</h2>
 
-      <div style={{ marginBottom: 48 }}>
+      <div style={{
+        border: "1px solid var(--rule)", borderRadius: 8, padding: 24,
+        background: "white", marginBottom: 32
+      }}>
         <h3 style={{ fontSize: 20, marginBottom: 16 }}>Record a payment from a shop</h3>
         <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
           <select style={inputStyle} value={paymentForm.shop_id}
