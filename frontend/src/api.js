@@ -27,3 +27,13 @@ export async function getShopBalance(id) {
   const res = await fetch(`${API_BASE}/shops/${id}/balance`);
   return res.json();
 }
+
+export async function getBrandTransactions(id) {
+  const res = await fetch(`${API_BASE}/brands/${id}/transactions`);
+  return res.json();
+}
+
+export async function getShopTransactions(id) {
+  const res = await fetch(`${API_BASE}/shops/${id}/transactions`);
+  return res.json();
+}

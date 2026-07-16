@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from database import SessionLocal
@@ -16,6 +17,14 @@ import os
 load_dotenv()
 
 app = FastAPI(title="KhataFlow")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class BrandCreate(BaseModel):
     name: str
@@ -208,3 +217,30 @@ def create_shop_invoice(inv: ShopInvoiceCreate):
     db.refresh(new_inv)
     db.close()
     return new_inv
+
+@app.get("/brands/{brand_id}/transactions")
+def brand_transactions(brand_id: int):
+    db = SessionLocal()
+    entries = db.query(LedgerEntry).filter(
+        LedgerEntry.party_type == "brand",
+        LedgerEntry.party_id == brand_id
+    ).order_by(LedgerEntry.date.desc()).all()
+    db.close()
+    return [
+        {"id": e.id, "type": e.entry_type, "amount": e.amount, "description": e.description, "date": e.date}
+        for e in entries
+    ]
+
+
+@app.get("/shops/{shop_id}/transactions")
+def shop_transactions(shop_id: int):
+    db = SessionLocal()
+    entries = db.query(LedgerEntry).filter(
+        LedgerEntry.party_type == "shop",
+        LedgerEntry.party_id == shop_id
+    ).order_by(LedgerEntry.date.desc()).all()
+    db.close()
+    return [
+        {"id": e.id, "type": e.entry_type, "amount": e.amount, "description": e.description, "date": e.date}
+        for e in entries
+    ]
