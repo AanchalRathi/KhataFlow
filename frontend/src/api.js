@@ -37,3 +37,12 @@ export async function getShopTransactions(id) {
   const res = await fetch(`${API_BASE}/shops/${id}/transactions`);
   return res.json();
 }
+
+export async function updateInvoice(invoiceId, extractedData) {
+  const res = await fetch(`${API_BASE}/invoices/${invoiceId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ extracted_data: extractedData })
+  });
+  return res.json();
+}

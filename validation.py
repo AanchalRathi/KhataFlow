@@ -54,41 +54,34 @@ def validate_tax_arithmetic(taxable_value: float, cgst_rate: float, cgst_amount:
     return True, "Tax arithmetic valid"
 
 
-def validate_invoice(extracted_data: dict, db_session, invoice_model) -> tuple[str, str]:
-    """
-    Runs all validation checks. Returns (status, reason)
-    status is 'valid' or 'flagged'
-    """
+def validate_invoice(extracted_data: dict, db_session, invoice_model, exclude_id: int = None) -> tuple[str, str]:
     reasons = []
 
-    # GSTIN check
     gstin = extracted_data.get("vendor_gstin")
     is_valid_gstin, gstin_msg = validate_gstin(gstin)
     if not is_valid_gstin:
         reasons.append(gstin_msg)
 
-    # Tax arithmetic check
     is_valid_tax, tax_msg = validate_tax_arithmetic(
         extracted_data.get("taxable_value"),
-        extracted_data.get("cgst_rate"),
-        extracted_data.get("cgst_amount"),
-        extracted_data.get("sgst_rate"),
-        extracted_data.get("sgst_amount"),
-        extracted_data.get("igst_rate"),
-        extracted_data.get("igst_amount"),
+        extracted_data.get("cgst_rate"), extracted_data.get("cgst_amount"),
+        extracted_data.get("sgst_rate"), extracted_data.get("sgst_amount"),
+        extracted_data.get("igst_rate"), extracted_data.get("igst_amount"),
         extracted_data.get("total_amount"),
     )
     if not is_valid_tax:
         reasons.append(tax_msg)
 
-    # Duplicate check
     invoice_number = extracted_data.get("invoice_number")
     vendor_gstin = extracted_data.get("vendor_gstin")
     if invoice_number and vendor_gstin:
-        existing = db_session.query(invoice_model).filter(
+        query = db_session.query(invoice_model).filter(
             invoice_model.extracted_data["invoice_number"].astext == invoice_number,
             invoice_model.extracted_data["vendor_gstin"].astext == vendor_gstin
-        ).first()
+        )
+        if exclude_id is not None:
+            query = query.filter(invoice_model.id != exclude_id)
+        existing = query.first()
         if existing:
             reasons.append(f"Duplicate invoice: {invoice_number} from same vendor already exists")
 

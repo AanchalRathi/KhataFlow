@@ -2,8 +2,9 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pydantic import BaseModel, field_validator
+from typing import Optional
 from database import SessionLocal
-from models import Invoice, Brand , Shop, BrandInvoice, ShopInvoice
+from models import Invoice, Brand , Shop, BrandInvoice, ShopInvoice, LedgerEntry
 from validation import validate_invoice
 from ocr import extract_text_from_image
 from extraction import extract_from_printed_text, extract_from_handwritten_image
@@ -70,6 +71,9 @@ class ShopInvoiceCreate(BaseModel):
     invoice_number: str
     invoice_date: str
     amount: float
+
+class InvoiceUpdate(BaseModel):
+    extracted_data: dict
 
 @app.get("/")
 def root():
@@ -228,6 +232,29 @@ def create_shop_invoice(inv: ShopInvoiceCreate):
     db.refresh(new_inv)
     db.close()
     return new_inv
+
+@app.put("/invoices/{invoice_id}")
+def update_invoice(invoice_id: int, update: InvoiceUpdate):
+    db = SessionLocal()
+    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not invoice:
+        db.close()
+        return {"error": "Invoice not found"}
+
+    invoice.extracted_data = update.extracted_data
+    status, reason = validate_invoice(update.extracted_data, db, Invoice, exclude_id=invoice_id)
+    invoice.validation_status = status
+    invoice.validation_reason = reason
+    db.commit()
+    db.refresh(invoice)
+    db.close()
+
+    return {
+        "invoice_id": invoice.id,
+        "extracted_data": invoice.extracted_data,
+        "validation_status": status,
+        "validation_reason": reason
+    }
 
 @app.get("/brands/{brand_id}/transactions")
 def brand_transactions(brand_id: int):
