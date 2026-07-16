@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --paper: #FAFAF8;
+  --ink: #1B2B29;
+  --ink-soft: #5C6B68;
+  --sage: #3F6B5C;
+  --sage-soft: #E8EFEC;
+  --gold: #B8925A;
+  --rule: #E4E0D6;
+  --flag: #B25D48;
+  --flag-soft: #F5E9E5;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+}
+
+h1, h2, h3 { font-family: 'Fraunces', serif; font-weight: 500; margin: 0; }
+
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: 2px;
+}
