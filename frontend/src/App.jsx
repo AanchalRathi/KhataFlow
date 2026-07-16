@@ -24,7 +24,10 @@ export default function App() {
         justifyContent: "space-between",
         alignItems: "center"
       }}>
-        <h1 style={{ fontSize: 24 }}>KhataFlow</h1>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+          <h1 style={{ fontSize: 24 }}>KhataFlow</h1>
+          <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>ledger & reconciliation</span>
+        </div>
         <nav style={{ display: "flex", gap: 24 }}>
           {Object.entries(PAGES).map(([key, { label }]) => (
             <button
