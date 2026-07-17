@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { uploadInvoice, updateInvoice } from "./api";
+import { uploadInvoice, updateInvoice, getBrands, getShops } from "./api";
 
 const LABELS = {
   cgst_rate: "CGST Rate", cgst_amount: "CGST Amount",
@@ -15,11 +15,15 @@ export default function UploadReview() {
   const [loading, setLoading] = useState(false);
   const [editedData, setEditedData] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [brands, setBrands] = useState([]);
+  const [shops, setShops] = useState([]);
+  const [partyType, setPartyType] = useState("brand");
+  const [partyId, setPartyId] = useState("");
 
   const handleSubmit = async () => {
     if (!file) return;
     setLoading(true);
-    const res = await uploadInvoice(file, docType);
+    const res = await uploadInvoice(file, docType, partyType, partyId || null);
     setResult(res);
     setEditedData(res.extracted_data || null);
     setLoading(false);
@@ -48,6 +52,13 @@ export default function UploadReview() {
 
   const isFlagged = result?.validation_status === "flagged";
 
+  useEffect(() => {
+    (async () => {
+      setBrands(await getBrands());
+      setShops(await getShops());
+    })();
+  }, []);
+
   return (
     <div>
       <h2 style={{ fontSize: 32, marginBottom: 8 }}>Upload an invoice</h2>
@@ -68,6 +79,25 @@ export default function UploadReview() {
               fontFamily: "Inter", fontSize: 14, background: "var(--paper)"
             }}
           >
+          <select
+            value={partyType}
+            onChange={(e) => { setPartyType(e.target.value); setPartyId(""); }}
+            style={{ padding: "10px 14px", border: "1px solid var(--rule)", borderRadius: 4, fontFamily: "Inter", fontSize: 14, background: "var(--paper)" }}
+          >
+            <option value="brand">From a brand</option>
+            <option value="shop">To a shop</option>
+          </select>
+
+          <select
+            value={partyId}
+            onChange={(e) => setPartyId(e.target.value)}
+            style={{ padding: "10px 14px", border: "1px solid var(--rule)", borderRadius: 4, fontFamily: "Inter", fontSize: 14, background: "var(--paper)" }}
+          >
+            <option value="">Select {partyType}…</option>
+            {(partyType === "brand" ? brands : shops).map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
             <option value="printed">Printed invoice</option>
             <option value="handwritten">Handwritten bilty/challan</option>
           </select>
@@ -118,7 +148,11 @@ export default function UploadReview() {
               {result.validation_status === "valid" ? "✓ Valid" : "⚑ Flagged"}
               {result.validation_reason ? ` — ${result.validation_reason}` : ""}
             </div>
-
+            {result.linked_to_ledger && (
+              <p style={{ fontSize: 13, color: "var(--sage)", marginTop: 8 }}>
+                ✓ Added to ledger
+              </p>
+            )}
             {isFlagged && (
               <button
                 onClick={handleSaveCorrections}

@@ -10,11 +10,16 @@ class Invoice(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String)
     raw_ocr_text = Column(String)
-    extracted_data = Column(JSONB)          # structured JSONB from Gemini
-    validation_status = Column(String, default="pending")  # pending / valid / flagged
+    extracted_data = Column(JSONB)
+    validation_status = Column(String, default="pending")
     validation_reason = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    party_type = Column(String, nullable=True)
+    party_id = Column(Integer, nullable=True)
+    linked_brand_invoice_id = Column(Integer, nullable=True)
+    linked_shop_invoice_id = Column(Integer, nullable=True)
+    
 class Brand(Base):
     __tablename__ = "brands"
 

@@ -84,20 +84,29 @@ def health():
     return {"status": "healthy"}
 
 @app.post("/upload-invoice")
-async def upload_invoice(file: UploadFile = File(...),doc_type: str = Form(...)):
-    # temp save the uploaded file
+async def upload_invoice(
+    file: UploadFile = File(...),
+    doc_type: str = Form(...),
+    party_type: Optional[str] = Form(None),   # "brand" or "shop"
+    party_id: Optional[int] = Form(None)
+):
     temp_path = f"temp_{file.filename}"
     with open(temp_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # OCR
     try:
         if doc_type == "handwritten":
             raw_text = None
-            extracted_data = extract_from_handwritten_image(temp_path)
+            try:
+                extracted_data = extract_from_handwritten_image(temp_path)
+            except json_lib.JSONDecodeError:
+                return {"error": "Could not read structured data from this document. Try a clearer photo."}
         else:
             raw_text = extract_text_from_image(temp_path)
-            extracted_data = extract_from_printed_text(raw_text)
+            try:
+                extracted_data = extract_from_printed_text(raw_text)
+            except json_lib.JSONDecodeError:
+                return {"error": "Could not read structured data from this document. Try a clearer scan."}
 
         db = SessionLocal()
         status, reason = validate_invoice(extracted_data, db, Invoice)
@@ -107,11 +116,45 @@ async def upload_invoice(file: UploadFile = File(...),doc_type: str = Form(...))
             raw_ocr_text=raw_text,
             extracted_data=extracted_data,
             validation_status=status,
-            validation_reason=reason
+            validation_reason=reason,
+            party_type=party_type,
+            party_id=party_id
         )
         db.add(invoice)
         db.commit()
         db.refresh(invoice)
+
+        # If valid AND linked to a party, automatically create the ledger-driving record
+        if status == "valid" and party_type and party_id:
+            amount = extracted_data.get("total_amount")
+            invoice_number = extracted_data.get("invoice_number")
+            invoice_date = extracted_data.get("invoice_date")
+
+            if party_type == "brand":
+                brand_inv = BrandInvoice(
+                    brand_id=party_id, invoice_number=invoice_number,
+                    invoice_date=invoice_date, amount=amount
+                )
+                db.add(brand_inv)
+                db.commit()
+                db.refresh(brand_inv)
+                record_brand_invoice_entry(db, brand_inv)
+                invoice.linked_brand_invoice_id = brand_inv.id
+
+            elif party_type == "shop":
+                shop_inv = ShopInvoice(
+                    shop_id=party_id, invoice_number=invoice_number,
+                    invoice_date=invoice_date, amount=amount
+                )
+                db.add(shop_inv)
+                db.commit()
+                db.refresh(shop_inv)
+                record_shop_invoice_entry(db, shop_inv)
+                invoice.linked_shop_invoice_id = shop_inv.id
+
+            db.commit()
+            db.refresh(invoice)
+
         db.close()
 
         return {
@@ -119,7 +162,8 @@ async def upload_invoice(file: UploadFile = File(...),doc_type: str = Form(...))
             "doc_type": doc_type,
             "extracted_data": extracted_data,
             "validation_status": status,
-            "validation_reason": reason
+            "validation_reason": reason,
+            "linked_to_ledger": bool(invoice.linked_brand_invoice_id or invoice.linked_shop_invoice_id)
         }
     finally:
         if os.path.exists(temp_path):
@@ -246,6 +290,33 @@ def update_invoice(invoice_id: int, update: InvoiceUpdate):
     invoice.validation_status = status
     invoice.validation_reason = reason
     db.commit()
+
+    # Newly valid AND has a linked party AND not already linked to ledger
+    already_linked = invoice.linked_brand_invoice_id or invoice.linked_shop_invoice_id
+    if status == "valid" and invoice.party_type and invoice.party_id and not already_linked:
+        amount = update.extracted_data.get("total_amount")
+        invoice_number = update.extracted_data.get("invoice_number")
+        invoice_date = update.extracted_data.get("invoice_date")
+
+        if invoice.party_type == "brand":
+            brand_inv = BrandInvoice(brand_id=invoice.party_id, invoice_number=invoice_number,
+                                       invoice_date=invoice_date, amount=amount)
+            db.add(brand_inv)
+            db.commit()
+            db.refresh(brand_inv)
+            record_brand_invoice_entry(db, brand_inv)
+            invoice.linked_brand_invoice_id = brand_inv.id
+        elif invoice.party_type == "shop":
+            shop_inv = ShopInvoice(shop_id=invoice.party_id, invoice_number=invoice_number,
+                                     invoice_date=invoice_date, amount=amount)
+            db.add(shop_inv)
+            db.commit()
+            db.refresh(shop_inv)
+            record_shop_invoice_entry(db, shop_inv)
+            invoice.linked_shop_invoice_id = shop_inv.id
+
+        db.commit()
+
     db.refresh(invoice)
     db.close()
 
