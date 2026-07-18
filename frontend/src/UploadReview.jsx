@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { uploadInvoice, updateInvoice, getBrands, getShops } from "./api";
 
 const LABELS = {
@@ -70,19 +70,23 @@ export default function UploadReview() {
         border: "1px solid var(--rule)", borderRadius: 8, padding: 24,
         background: "white", marginBottom: 32
       }}>
-        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
           <select
             value={docType}
             onChange={(e) => setDocType(e.target.value)}
             style={{
               padding: "10px 14px", border: "1px solid var(--rule)", borderRadius: 4,
-              fontFamily: "Inter", fontSize: 14, background: "var(--paper)"
+              fontFamily: "Inter", fontSize: 14, background: "var(--paper)", minWidth: 160
             }}
           >
+            <option value="printed">Printed invoice</option>
+            <option value="handwritten">Handwritten bilty/challan</option>
+          </select>
+
           <select
             value={partyType}
             onChange={(e) => { setPartyType(e.target.value); setPartyId(""); }}
-            style={{ padding: "10px 14px", border: "1px solid var(--rule)", borderRadius: 4, fontFamily: "Inter", fontSize: 14, background: "var(--paper)" }}
+            style={{ padding: "10px 14px", border: "1px solid var(--rule)", borderRadius: 4, fontFamily: "Inter", fontSize: 14, background: "var(--paper)", minWidth: 140 }}
           >
             <option value="brand">From a brand</option>
             <option value="shop">To a shop</option>
@@ -91,20 +95,17 @@ export default function UploadReview() {
           <select
             value={partyId}
             onChange={(e) => setPartyId(e.target.value)}
-            style={{ padding: "10px 14px", border: "1px solid var(--rule)", borderRadius: 4, fontFamily: "Inter", fontSize: 14, background: "var(--paper)" }}
+            style={{ padding: "10px 14px", border: "1px solid var(--rule)", borderRadius: 4, fontFamily: "Inter", fontSize: 14, background: "var(--paper)", minWidth: 140 }}
           >
             <option value="">Select {partyType}…</option>
             {(partyType === "brand" ? brands : shops).map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
-            <option value="printed">Printed invoice</option>
-            <option value="handwritten">Handwritten bilty/challan</option>
-          </select>
-
           <label style={{
             padding: "10px 14px", border: "1px dashed var(--rule)", borderRadius: 4,
-            fontFamily: "Inter", fontSize: 14, color: "var(--ink-soft)", cursor: "pointer", flex: 1
+            fontFamily: "Inter", fontSize: 14, color: "var(--ink-soft)", cursor: "pointer",
+            flex: "1 1 200px", minWidth: 180
           }}>
             {file ? file.name : "Choose a file to upload"}
             <input type="file" onChange={(e) => setFile(e.target.files[0])} style={{ display: "none" }} />
