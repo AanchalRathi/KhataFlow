@@ -1,9 +1,11 @@
 const API_BASE = "http://localhost:8000"; // update to your Render URL when deployed
 
-export async function uploadInvoice(file, docType) {
+export async function uploadInvoice(file, docType, partyType, partyId) {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("doc_type", docType);
+  if (partyType) formData.append("party_type", partyType);
+  if (partyId) formData.append("party_id", partyId);
   const res = await fetch(`${API_BASE}/upload-invoice`, { method: "POST", body: formData });
   return res.json();
 }
