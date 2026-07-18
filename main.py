@@ -30,13 +30,13 @@ app.add_middleware(
 
 class BrandCreate(BaseModel):
     name: str
-    gstin: str = None
+    gstin: Optional[str] = None
     commission_rate: float = 0.0
 
 class ShopCreate(BaseModel):
     name: str
-    gstin: str = None
-    location: str = None
+    gstin: Optional[str] = None
+    location: Optional[str] = None
 
 class PaymentCreate(BaseModel):
     shop_id: int
@@ -88,7 +88,7 @@ def health():
 async def upload_invoice(
     file: UploadFile = File(...),
     doc_type: str = Form(...),
-    party_type: Optional[str] = Form(None),   # "brand" or "shop"
+    party_type: Optional[str] = Form(None),  
     party_id: Optional[int] = Form(None)
 ):
     temp_path = f"temp_{file.filename}"
@@ -292,7 +292,6 @@ def update_invoice(invoice_id: int, update: InvoiceUpdate):
     invoice.validation_reason = reason
     db.commit()
 
-    # Newly valid AND has a linked party AND not already linked to ledger
     already_linked = invoice.linked_brand_invoice_id or invoice.linked_shop_invoice_id
     if status == "valid" and invoice.party_type and invoice.party_id and not already_linked:
         amount = update.extracted_data.get("total_amount")
