@@ -353,3 +353,47 @@ def shop_transactions(shop_id: int):
         {"id": e.id, "type": e.entry_type, "amount": e.amount, "description": e.description, "date": e.date}
         for e in entries
     ]
+
+@app.delete("/brands/{brand_id}")
+def delete_brand(brand_id: int):
+    db = SessionLocal()
+    brand = db.query(Brand).filter(Brand.id == brand_id).first()
+    if not brand:
+        db.close()
+        return {"error": "Brand not found"}
+    db.query(LedgerEntry).filter(LedgerEntry.party_type == "brand", LedgerEntry.party_id == brand_id).delete()
+    db.query(BrandInvoice).filter(BrandInvoice.brand_id == brand_id).delete()
+    db.query(Remittance).filter(Remittance.brand_id == brand_id).delete()
+    db.delete(brand)
+    db.commit()
+    db.close()
+    return {"deleted": True, "brand_id": brand_id}
+
+
+@app.delete("/shops/{shop_id}")
+def delete_shop(shop_id: int):
+    db = SessionLocal()
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    if not shop:
+        db.close()
+        return {"error": "Shop not found"}
+    db.query(LedgerEntry).filter(LedgerEntry.party_type == "shop", LedgerEntry.party_id == shop_id).delete()
+    db.query(ShopInvoice).filter(ShopInvoice.shop_id == shop_id).delete()
+    db.query(Payment).filter(Payment.shop_id == shop_id).delete()
+    db.delete(shop)
+    db.commit()
+    db.close()
+    return {"deleted": True, "shop_id": shop_id}
+
+
+@app.delete("/invoices/{invoice_id}")
+def delete_invoice(invoice_id: int):
+    db = SessionLocal()
+    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not invoice:
+        db.close()
+        return {"error": "Invoice not found"}
+    db.delete(invoice)
+    db.commit()
+    db.close()
+    return {"deleted": True, "invoice_id": invoice_id}

@@ -48,3 +48,13 @@ export async function updateInvoice(invoiceId, extractedData) {
   });
   return res.json();
 }
+
+export async function deleteBrand(id) {
+  const res = await fetch(`${API_BASE}/brands/${id}`, { method: "DELETE" });
+  return res.json();
+}
+
+export async function deleteShop(id) {
+  const res = await fetch(`${API_BASE}/shops/${id}`, { method: "DELETE" });
+  return res.json();
+}

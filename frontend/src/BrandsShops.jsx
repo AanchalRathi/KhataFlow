@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getBrands, getShops } from "./api";
+import { getBrands, getShops, deleteBrand, deleteShop } from "./api";
 
 const API_BASE = "http://localhost:8000";
 
@@ -55,6 +55,18 @@ export default function BrandsShops() {
       location: shopForm.location || null
     });
     setShopForm({ name: "", gstin: "", location: "" });
+    refresh();
+  };
+
+  const handleDeleteBrand = async (id, name) => {
+    if (!window.confirm(`Remove ${name}? This also deletes their invoice and payment history.`)) return;
+    await deleteBrand(id);
+    refresh();
+  };
+
+  const handleDeleteShop = async (id, name) => {
+    if (!window.confirm(`Remove ${name}? This also deletes their invoice and payment history.`)) return;
+    await deleteShop(id);
     refresh();
   };
 
@@ -149,15 +161,24 @@ export default function BrandsShops() {
             )}
             {brands.map((b, i) => (
               <div key={b.id} style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "14px 20px",
+                display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px",
                 borderBottom: i < brands.length - 1 ? "1px solid var(--rule)" : "none"
               }}>
                 <span style={{ fontSize: 15 }}>{b.name}</span>
-                <span className="mono" style={{ fontSize: 14, color: "var(--ink-soft)" }}>
-                  {b.commission_rate}% commission
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <span className="mono" style={{ fontSize: 14, color: "var(--ink-soft)" }}>
+                    {b.commission_rate}% commission
+                  </span>
+                  <button
+                    onClick={() => handleDeleteBrand(b.id, b.name)}
+                    style={{
+                      background: "none", border: "none", color: "var(--flag)", fontSize: 13,
+                      cursor: "pointer", padding: "4px 8px"
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             ))}
           </div>
