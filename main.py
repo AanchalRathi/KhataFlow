@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, field_validator
 from typing import Optional
 from database import SessionLocal
-from models import Invoice, Brand , Shop, BrandInvoice, ShopInvoice, LedgerEntry
+from models import Invoice, Brand, Shop, BrandInvoice, ShopInvoice, LedgerEntry, Payment, Remittance
 from validation import validate_invoice
 from ocr import extract_text_from_image
 from extraction import extract_from_printed_text, extract_from_handwritten_image
@@ -41,7 +41,7 @@ class ShopCreate(BaseModel):
 class PaymentCreate(BaseModel):
     shop_id: int
     amount: float
-    notes: str = None
+    notes: Optional[str] = None
     @field_validator("amount")
     @classmethod
     def amount_must_be_positive(cls, v):
@@ -52,7 +52,7 @@ class PaymentCreate(BaseModel):
 class RemittanceCreate(BaseModel):
     brand_id: int
     sale_amount: float
-    notes: str = None
+    notes: Optional[str] = None
     @field_validator("sale_amount")
     @classmethod
     def sale_amount_must_be_positive(cls, v):
