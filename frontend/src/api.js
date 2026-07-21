@@ -58,3 +58,18 @@ export async function deleteShop(id) {
   const res = await fetch(`${API_BASE}/shops/${id}`, { method: "DELETE" });
   return res.json();
 }
+
+export async function deletePayment(id) {
+  const res = await fetch(`${API_BASE}/payments/${id}`, { method: "DELETE" });
+  return res.json();
+}
+
+export async function deleteRemittance(id) {
+  const res = await fetch(`${API_BASE}/remittances/${id}`, { method: "DELETE" });
+  return res.json();
+}
+
+export async function deleteInvoice(id) {
+  const res = await fetch(`${API_BASE}/invoices/${id}`, { method: "DELETE" });
+  return res.json();
+}

@@ -336,7 +336,8 @@ def brand_transactions(brand_id: int):
     ).order_by(LedgerEntry.date.desc()).all()
     db.close()
     return [
-        {"id": e.id, "type": e.entry_type, "amount": e.amount, "description": e.description, "date": e.date}
+        {"id": e.id, "type": e.entry_type, "amount": e.amount, "description": e.description,
+        "date": e.date, "reference_id": e.reference_id}
         for e in entries
     ]
 
@@ -350,7 +351,8 @@ def shop_transactions(shop_id: int):
     ).order_by(LedgerEntry.date.desc()).all()
     db.close()
     return [
-        {"id": e.id, "type": e.entry_type, "amount": e.amount, "description": e.description, "date": e.date}
+        {"id": e.id, "type": e.entry_type, "amount": e.amount, "description": e.description,
+        "date": e.date, "reference_id": e.reference_id}
         for e in entries
     ]
 
@@ -397,3 +399,39 @@ def delete_invoice(invoice_id: int):
     db.commit()
     db.close()
     return {"deleted": True, "invoice_id": invoice_id}
+
+@app.delete("/payments/{payment_id}")
+def delete_payment(payment_id: int):
+    db = SessionLocal()
+    payment = db.query(Payment).filter(Payment.id == payment_id).first()
+    if not payment:
+        db.close()
+        return {"error": "Payment not found"}
+
+    # Remove the matching ledger entry too
+    db.query(LedgerEntry).filter(
+        LedgerEntry.entry_type == "payment",
+        LedgerEntry.reference_id == payment_id
+    ).delete()
+    db.delete(payment)
+    db.commit()
+    db.close()
+    return {"deleted": True, "payment_id": payment_id}
+
+
+@app.delete("/remittances/{remittance_id}")
+def delete_remittance(remittance_id: int):
+    db = SessionLocal()
+    remittance = db.query(Remittance).filter(Remittance.id == remittance_id).first()
+    if not remittance:
+        db.close()
+        return {"error": "Remittance not found"}
+
+    db.query(LedgerEntry).filter(
+        LedgerEntry.entry_type == "remittance",
+        LedgerEntry.reference_id == remittance_id
+    ).delete()
+    db.delete(remittance)
+    db.commit()
+    db.close()
+    return {"deleted": True, "remittance_id": remittance_id}

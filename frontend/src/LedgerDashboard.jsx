@@ -1,27 +1,42 @@
 import { useEffect, useState } from "react";
-import { getBrands, getShops, getBrandBalance, getShopBalance, getBrandTransactions, getShopTransactions } from "./api";
+import { getBrands, getShops, getBrandBalance, getShopBalance, getBrandTransactions, getShopTransactions,deletePayment, deleteRemittance  } from "./api";
 
-function TransactionRow({ t }) {
+function TransactionRow({ t, onDelete  }) {
+  const canDelete = t.type === "payment" || t.type === "remittance";
+
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this transaction? This will affect the balance.")) return;
+    if (t.type === "payment") await deletePayment(t.reference_id);
+    else if (t.type === "remittance") await deleteRemittance(t.reference_id);
+    onDelete();
+  };
   return (
     <div style={{
-      display: "flex", justifyContent: "space-between", padding: "8px 0",
+      display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0",
       borderBottom: "1px solid var(--rule)", fontSize: 13
     }}>
       <span style={{ textTransform: "capitalize", color: "var(--ink-soft)" }}>
         {t.type} — {t.description}
       </span>
-      <span className="mono" style={{ color: t.amount > 0 ? "var(--gold)" : "var(--sage)" }}>
-        {t.amount > 0 ? "+" : ""}₹{t.amount.toLocaleString("en-IN")}
-      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span className="mono" style={{ color: t.amount > 0 ? "var(--gold)" : "var(--sage)" }}>
+          {t.amount > 0 ? "+" : ""}₹{t.amount.toLocaleString("en-IN")}
+        </span>
+        {canDelete && (
+          <button onClick={handleDelete} style={{
+            background: "none", border: "none", color: "var(--flag)", fontSize: 12, cursor: "pointer"
+          }}>
+            Delete
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
 function TransactionModal({ name, transactions, onClose }) {
   return (
-    <div
-      onClick={onClose}
-      style={{
+    <div onClick={onClose} style={{
         position: "fixed", inset: 0, background: "rgba(27, 43, 41, 0.4)",
         display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100
       }}
@@ -46,10 +61,10 @@ function TransactionModal({ name, transactions, onClose }) {
           {transactions.length === 0 && (
             <p style={{ color: "var(--ink-soft)", fontSize: 14, padding: "16px 0" }}>No transactions yet.</p>
           )}
-          {transactions.map((t) => <TransactionRow key={t.id} t={t} />)}
-        </div>
+          {transactions.map((t) => <TransactionRow key={t.id} t={t} onDelete={onDelete} />)}
       </div>
     </div>
+  </div>
   );
 }
 
@@ -89,7 +104,7 @@ export default function LedgerDashboard() {
 
   const openModal = async (type, item) => {
     const all = type === "brand" ? await getBrandTransactions(item.id) : await getShopTransactions(item.id);
-    setModal({ name: item.name, transactions: all });
+    setModal({ name: item.name, transactions: all, type, id: item.id });
   };
 
   const totalOwedToBrands = brands.reduce((sum, b) => sum + Math.max(b.balance, 0), 0);
@@ -159,6 +174,13 @@ export default function LedgerDashboard() {
           name={modal.name}
           transactions={modal.transactions}
           onClose={() => setModal(null)}
+          onDelete={async () => {
+            const updated = modal.type === "brand"
+              ? await getBrandTransactions(modal.id)
+              : await getShopTransactions(modal.id);
+            setModal({ ...modal, transactions: updated });
+            window.location.reload(); 
+          }}
         />
       )}
     </div>

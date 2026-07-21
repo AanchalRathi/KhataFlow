@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { uploadInvoice, updateInvoice, getBrands, getShops } from "./api";
+import { uploadInvoice, updateInvoice, getBrands, getShops, deleteInvoice } from "./api";
 
 const LABELS = {
   cgst_rate: "CGST Rate", cgst_amount: "CGST Amount",
@@ -134,6 +134,22 @@ export default function UploadReview() {
             Extracted fields and validation results will appear here once you upload a document.
           </p>
         </div>
+      )}
+
+      {result.invoice_id && (
+        <button
+          onClick={async () => {
+            if (!window.confirm("Delete this invoice record?")) return;
+            await deleteInvoice(result.invoice_id);
+            setResult(null);
+            setFile(null);
+          }}
+          style={{
+            background: "none", border: "none", color: "var(--flag)", fontSize: 13, cursor: "pointer"
+          }}
+        >
+          Delete invoice
+        </button>
       )}
 
       {result && !result.error && (
