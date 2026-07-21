@@ -385,6 +385,19 @@ def delete_invoice(invoice_id: int):
     if not invoice:
         db.close()
         return {"error": "Invoice not found"}
+    if invoice.linked_brand_invoice_id:
+        db.query(LedgerEntry).filter(
+            LedgerEntry.entry_type == "invoice",
+            LedgerEntry.reference_id == invoice.linked_brand_invoice_id
+        ).delete()
+        db.query(BrandInvoice).filter(BrandInvoice.id == invoice.linked_brand_invoice_id).delete()
+
+    if invoice.linked_shop_invoice_id:
+        db.query(LedgerEntry).filter(
+            LedgerEntry.entry_type == "invoice",
+            LedgerEntry.reference_id == invoice.linked_shop_invoice_id
+        ).delete()
+        db.query(ShopInvoice).filter(ShopInvoice.id == invoice.linked_shop_invoice_id).delete()
     db.delete(invoice)
     db.commit()
     db.close()
@@ -425,3 +438,42 @@ def delete_remittance(remittance_id: int):
     db.commit()
     db.close()
     return {"deleted": True, "remittance_id": remittance_id}
+
+@app.delete("/ledger-invoices/{party_type}/{reference_id}")
+def delete_ledger_invoice(party_type: str, reference_id: int):
+    db = SessionLocal()
+
+    db.query(LedgerEntry).filter(
+        LedgerEntry.entry_type == "invoice",
+        LedgerEntry.reference_id == reference_id,
+        LedgerEntry.party_type == party_type
+    ).delete()
+
+    if party_type == "brand":
+        brand_inv = db.query(BrandInvoice).filter(BrandInvoice.id == reference_id).first()
+        if not brand_inv:
+            db.close()
+            return {"error": "Invoice not found"}
+        # also clear the link from the original OCR Invoice record, if any
+        db.query(Invoice).filter(Invoice.linked_brand_invoice_id == reference_id).update(
+            {"linked_brand_invoice_id": None}
+        )
+        db.delete(brand_inv)
+
+    elif party_type == "shop":
+        shop_inv = db.query(ShopInvoice).filter(ShopInvoice.id == reference_id).first()
+        if not shop_inv:
+            db.close()
+            return {"error": "Invoice not found"}
+        db.query(Invoice).filter(Invoice.linked_shop_invoice_id == reference_id).update(
+            {"linked_shop_invoice_id": None}
+        )
+        db.delete(shop_inv)
+
+    else:
+        db.close()
+        return {"error": "Invalid party_type"}
+
+    db.commit()
+    db.close()
+    return {"deleted": True}

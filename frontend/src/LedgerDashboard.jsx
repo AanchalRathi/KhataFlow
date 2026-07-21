@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
-import { getBrands, getShops, getBrandBalance, getShopBalance, getBrandTransactions, getShopTransactions,deletePayment, deleteRemittance  } from "./api";
+import { getBrands, getShops, getBrandBalance, getShopBalance, getBrandTransactions, getShopTransactions,deletePayment, deleteRemittance, deleteLedgerInvoice } from "./api";
 
-function TransactionRow({ t, onDelete  }) {
-  const canDelete = t.type === "payment" || t.type === "remittance";
+function TransactionRow({ t, partyType,  onDelete  }) {
+  const canDelete = t.type === "payment" || t.type === "remittance" || t.type === "invoice";
 
   const handleDelete = async () => {
     if (!window.confirm("Delete this transaction? This will affect the balance.")) return;
     if (t.type === "payment") await deletePayment(t.reference_id);
     else if (t.type === "remittance") await deleteRemittance(t.reference_id);
+    else if (t.type === "invoice")  await deleteLedgerInvoice(partyType, t.reference_id);
     onDelete();
   };
+
   return (
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0",
@@ -34,9 +36,11 @@ function TransactionRow({ t, onDelete  }) {
   );
 }
 
-function TransactionModal({ name, transactions, onClose }) {
+function TransactionModal({ name, transactions,partyType, onClose, onDelete }) {
   return (
-    <div onClick={onClose} style={{
+    <div
+      onClick={onClose}
+      style={{
         position: "fixed", inset: 0, background: "rgba(27, 43, 41, 0.4)",
         display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100
       }}
@@ -61,10 +65,12 @@ function TransactionModal({ name, transactions, onClose }) {
           {transactions.length === 0 && (
             <p style={{ color: "var(--ink-soft)", fontSize: 14, padding: "16px 0" }}>No transactions yet.</p>
           )}
-          {transactions.map((t) => <TransactionRow key={t.id} t={t} onDelete={onDelete} />)}
+          {transactions.map((t) => (
+            <TransactionRow key={t.id} t={t} partyType={partyType} onDelete={onDelete} />
+          ))}
+        </div>
       </div>
     </div>
-  </div>
   );
 }
 
@@ -72,35 +78,33 @@ export default function LedgerDashboard() {
   const [brands, setBrands] = useState([]);
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState(null); // { name, transactions } or null
+  const [modal, setModal] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      const brandList = await getBrands();
-      const shopList = await getShops();
+  const loadData = async () => {
+    const brandList = await getBrands();
+    const shopList = await getShops();
 
-      const brandsWithData = await Promise.all(
-        brandList.map(async (b) => ({
-          ...b,
-          balance: (await getBrandBalance(b.id)).balance_owed,
-          recent: (await getBrandTransactions(b.id)).slice(0, 3),
-          all: null
-        }))
-      );
-      const shopsWithData = await Promise.all(
-        shopList.map(async (s) => ({
-          ...s,
-          balance: (await getShopBalance(s.id)).balance_owed,
-          recent: (await getShopTransactions(s.id)).slice(0, 3),
-          all: null
-        }))
-      );
+    const brandsWithData = await Promise.all(
+      brandList.map(async (b) => ({
+        ...b,
+        balance: (await getBrandBalance(b.id)).balance_owed,
+        recent: (await getBrandTransactions(b.id)).slice(0, 3),
+      }))
+    );
+    const shopsWithData = await Promise.all(
+      shopList.map(async (s) => ({
+        ...s,
+        balance: (await getShopBalance(s.id)).balance_owed,
+        recent: (await getShopTransactions(s.id)).slice(0, 3),
+      }))
+    );
 
-      setBrands(brandsWithData);
-      setShops(shopsWithData);
-      setLoading(false);
-    })();
-  }, []);
+    setBrands(brandsWithData);
+    setShops(shopsWithData);
+    setLoading(false);
+  };
+
+  useEffect(() => { loadData(); }, []);
 
   const openModal = async (type, item) => {
     const all = type === "brand" ? await getBrandTransactions(item.id) : await getShopTransactions(item.id);
@@ -133,7 +137,7 @@ export default function LedgerDashboard() {
 
             {r.recent.length > 0 && (
               <div style={{ paddingLeft: 4 }}>
-                {r.recent.map((t) => <TransactionRow key={t.id} t={t} />)}
+                {r.recent.map((t) => <TransactionRow key={t.id} t={t} partyType={type} onDelete={loadData} />)}
                 <button
                   onClick={() => openModal(type, r)}
                   style={{
@@ -173,13 +177,14 @@ export default function LedgerDashboard() {
         <TransactionModal
           name={modal.name}
           transactions={modal.transactions}
+          partyType={modal.type}
           onClose={() => setModal(null)}
           onDelete={async () => {
             const updated = modal.type === "brand"
               ? await getBrandTransactions(modal.id)
               : await getShopTransactions(modal.id);
             setModal({ ...modal, transactions: updated });
-            window.location.reload(); 
+            await loadData();
           }}
         />
       )}

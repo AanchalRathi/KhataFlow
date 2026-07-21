@@ -78,3 +78,8 @@ export async function deleteInvoice(id) {
   const res = await fetch(`${API_BASE}/invoices/${id}`, { method: "DELETE" });
   return res.json();
 }
+
+export async function deleteLedgerInvoice(partyType, referenceId) {
+  const res = await fetch(`${API_BASE}/ledger-invoices/${partyType}/${referenceId}`, { method: "DELETE" });
+  return res.json();
+}
