@@ -30,18 +30,21 @@ Small distribution businesses in India often track supplier and buyer accounts m
 **Backend**: FastAPI, SQLAlchemy, PostgreSQL (Neon)
 **OCR/AI**: Tesseract (printed documents), Google Gemini API via `google-genai` SDK (handwritten documents, structured field extraction)
 **Frontend**: React (Vite), custom minimalist design system inspired by physical ledger books
-**Repo structure**: monorepo — backend at root, frontend in `/frontend`
 
 ## Screenshots
 
-*(Add these below — recommended set, based on what's built)*
+1. **Upload & Review** — a printed invoice successfully extracted, showing the "Valid" badge and populated fields<img width="1872" height="647" alt="image" src="https://github.com/user-attachments/assets/27899e9b-366f-44bb-9221-686eeec8bc82" /> <img width="967" height="846" alt="image" src="https://github.com/user-attachments/assets/6b4dc581-8266-4cad-b60e-b1894beac6c9" />
 
-1. **Upload & Review** — a printed invoice successfully extracted, showing the "Valid" badge and populated fields
-2. **Upload & Review (flagged)** — an invoice flagged for a duplicate or validation issue, with editable fields visible
-3. **Ledger dashboard** — the summary cards (owed to brands / due from shops) and balance list
-4. **Ledger drill-down** — the "View all" transaction history modal open for a specific brand or shop
-5. **Brands & Shops** — the management page with a brand and shop added
-6. **Payments & Remittances** — the commission-split result shown after sending a remittance
+2. **Upload & Review (flagged)** — an invoice flagged for a duplicate or validation issue, with editable fields visible <img width="1088" height="807" alt="image" src="https://github.com/user-attachments/assets/7d900f78-4dfe-4d60-869b-3caf8048f8b5" />
+
+3. **Ledger dashboard** — the summary cards (owed to brands / due from shops) and balance list <img width="1837" height="853" alt="image" src="https://github.com/user-attachments/assets/29714b7b-f364-4d59-bef3-07e3924e128f" />
+
+4. **Ledger drill-down** — the "View all" transaction history modal open for a specific brand or shop <img width="1110" height="505" alt="image" src="https://github.com/user-attachments/assets/a24969b7-6748-4672-82ca-eede31c2c088" />
+
+5. **Brands & Shops** — the management page with a brand and shop added <img width="1122" height="622" alt="image" src="https://github.com/user-attachments/assets/ba9fef15-6fb6-40de-861c-2987b372a8ca" /> <img width="1062" height="586" alt="image" src="https://github.com/user-attachments/assets/bd74b365-a136-4c02-8391-fe38d3105a7a" />
+
+6. **Payments & Remittances** — the commission-split result shown after sending a remittance <img width="1066" height="603" alt="image" src="https://github.com/user-attachments/assets/a398fbe1-29fc-479b-b7ca-ab16fc2f5d17" />
+
 
 ## Setup
 
@@ -84,5 +87,3 @@ npm run dev
 - Migration tooling (Alembic) — schema changes during development were applied via manual table resets
 - Automatic document-type detection (printed vs. handwritten is currently a manual selection at upload)
 
-## What I'd build next
-Deployment and basic authentication are the two pieces standing between this and something a real user could access outside my own machine — both are scoped and next on the list.
