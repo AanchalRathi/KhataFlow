@@ -49,6 +49,11 @@ export async function updateInvoice(invoiceId, extractedData) {
   return res.json();
 }
 
+export async function confirmInvoice(invoiceId) {
+  const res = await fetch(`${API_BASE}/invoices/${invoiceId}/confirm`, { method: "POST" });
+  return res.json();
+}
+
 export async function deleteBrand(id) {
   const res = await fetch(`${API_BASE}/brands/${id}`, { method: "DELETE" });
   return res.json();

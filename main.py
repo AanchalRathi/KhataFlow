@@ -125,39 +125,6 @@ async def upload_invoice(
         db.commit()
         db.refresh(invoice)
 
-        # If valid AND linked to a party, automatically create the ledger-driving record
-        if status == "valid" and party_type and party_id:
-            amount = extracted_data.get("total_amount")
-            invoice_number = extracted_data.get("invoice_number")
-            invoice_date = extracted_data.get("invoice_date")
-
-            if party_type == "brand":
-                brand_inv = BrandInvoice(
-                    brand_id=party_id, invoice_number=invoice_number,
-                    invoice_date=invoice_date, amount=amount
-                )
-                db.add(brand_inv)
-                db.commit()
-                db.refresh(brand_inv)
-                record_brand_invoice_entry(db, brand_inv)
-                invoice.linked_brand_invoice_id = brand_inv.id
-
-            elif party_type == "shop":
-                shop_inv = ShopInvoice(
-                    shop_id=party_id, invoice_number=invoice_number,
-                    invoice_date=invoice_date, amount=amount
-                )
-                db.add(shop_inv)
-                db.commit()
-                db.refresh(shop_inv)
-                record_shop_invoice_entry(db, shop_inv)
-                invoice.linked_shop_invoice_id = shop_inv.id
-
-            db.commit()
-            db.refresh(invoice)
-
-        db.close()
-
         return {
             "invoice_id": invoice.id,
             "doc_type": doc_type,
@@ -292,31 +259,6 @@ def update_invoice(invoice_id: int, update: InvoiceUpdate):
     invoice.validation_reason = reason
     db.commit()
 
-    already_linked = invoice.linked_brand_invoice_id or invoice.linked_shop_invoice_id
-    if status == "valid" and invoice.party_type and invoice.party_id and not already_linked:
-        amount = update.extracted_data.get("total_amount")
-        invoice_number = update.extracted_data.get("invoice_number")
-        invoice_date = update.extracted_data.get("invoice_date")
-
-        if invoice.party_type == "brand":
-            brand_inv = BrandInvoice(brand_id=invoice.party_id, invoice_number=invoice_number,
-                                       invoice_date=invoice_date, amount=amount)
-            db.add(brand_inv)
-            db.commit()
-            db.refresh(brand_inv)
-            record_brand_invoice_entry(db, brand_inv)
-            invoice.linked_brand_invoice_id = brand_inv.id
-        elif invoice.party_type == "shop":
-            shop_inv = ShopInvoice(shop_id=invoice.party_id, invoice_number=invoice_number,
-                                     invoice_date=invoice_date, amount=amount)
-            db.add(shop_inv)
-            db.commit()
-            db.refresh(shop_inv)
-            record_shop_invoice_entry(db, shop_inv)
-            invoice.linked_shop_invoice_id = shop_inv.id
-
-        db.commit()
-
     db.refresh(invoice)
     db.close()
 
@@ -325,6 +267,54 @@ def update_invoice(invoice_id: int, update: InvoiceUpdate):
         "extracted_data": invoice.extracted_data,
         "validation_status": status,
         "validation_reason": reason
+    }
+
+@app.post("/invoices/{invoice_id}/confirm")
+def confirm_invoice_to_ledger(invoice_id: int):
+    db = SessionLocal()
+    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not invoice:
+        db.close()
+        return {"error": "Invoice not found"}
+
+    if invoice.linked_brand_invoice_id or invoice.linked_shop_invoice_id:
+        db.close()
+        return {"error": "Already added to ledger"}
+
+    if not invoice.party_type or not invoice.party_id:
+        db.close()
+        return {"error": "No brand or shop selected for this invoice"}
+
+    extracted_data = invoice.extracted_data
+    amount = extracted_data.get("total_amount")
+    invoice_number = extracted_data.get("invoice_number")
+    invoice_date = extracted_data.get("invoice_date")
+
+    if invoice.party_type == "brand":
+        brand_inv = BrandInvoice(brand_id=invoice.party_id, invoice_number=invoice_number,
+                                   invoice_date=invoice_date, amount=amount)
+        db.add(brand_inv)
+        db.commit()
+        db.refresh(brand_inv)
+        record_brand_invoice_entry(db, brand_inv)
+        invoice.linked_brand_invoice_id = brand_inv.id
+
+    elif invoice.party_type == "shop":
+        shop_inv = ShopInvoice(shop_id=invoice.party_id, invoice_number=invoice_number,
+                                 invoice_date=invoice_date, amount=amount)
+        db.add(shop_inv)
+        db.commit()
+        db.refresh(shop_inv)
+        record_shop_invoice_entry(db, shop_inv)
+        invoice.linked_shop_invoice_id = shop_inv.id
+
+    db.commit()
+    db.refresh(invoice)
+    db.close()
+
+    return {
+        "invoice_id": invoice.id,
+        "linked_to_ledger": True
     }
 
 @app.get("/brands/{brand_id}/transactions")

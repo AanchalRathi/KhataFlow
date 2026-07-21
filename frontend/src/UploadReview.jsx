@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { uploadInvoice, updateInvoice, getBrands, getShops, deleteInvoice } from "./api";
+import { uploadInvoice, updateInvoice, getBrands, getShops } from "./api";
+import { deleteInvoice } from "./api";
 
 const LABELS = {
   cgst_rate: "CGST Rate", cgst_amount: "CGST Amount",
@@ -19,6 +20,14 @@ export default function UploadReview() {
   const [shops, setShops] = useState([]);
   const [partyType, setPartyType] = useState("brand");
   const [partyId, setPartyId] = useState("");
+  const [confirming, setConfirming] = useState(false);
+
+  const handleConfirm = async () => {
+    setConfirming(true);
+    const res = await confirmInvoice(result.invoice_id);
+    setResult({ ...result, linked_to_ledger: res.linked_to_ledger });
+    setConfirming(false);
+  };
 
   const handleSubmit = async () => {
     if (!file) return;
@@ -136,22 +145,6 @@ export default function UploadReview() {
         </div>
       )}
 
-      {result.invoice_id && (
-        <button
-          onClick={async () => {
-            if (!window.confirm("Delete this invoice record?")) return;
-            await deleteInvoice(result.invoice_id);
-            setResult(null);
-            setFile(null);
-          }}
-          style={{
-            background: "none", border: "none", color: "var(--flag)", fontSize: 13, cursor: "pointer"
-          }}
-        >
-          Delete invoice
-        </button>
-      )}
-
       {result && !result.error && (
         <div style={{ border: "1px solid var(--rule)", borderRadius: 8, background: "white", padding: 24 }}>
           <div style={{
@@ -165,24 +158,54 @@ export default function UploadReview() {
               {result.validation_status === "valid" ? "✓ Valid" : "⚑ Flagged"}
               {result.validation_reason ? ` — ${result.validation_reason}` : ""}
             </div>
-            {result.linked_to_ledger && (
-              <p style={{ fontSize: 13, color: "var(--sage)", marginTop: 8 }}>
-                ✓ Added to ledger
-              </p>
-            )}
-            {isFlagged && (
+
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <button
-                onClick={handleSaveCorrections}
-                disabled={saving}
+                onClick={async () => {
+                  if (!window.confirm("Delete this invoice record?")) return;
+                  await deleteInvoice(result.invoice_id);
+                  setResult(null);
+                  setFile(null);
+                }}
                 style={{
-                  padding: "8px 16px", background: "var(--sage)", color: "white", border: "none",
-                  borderRadius: 4, fontFamily: "Inter", fontWeight: 500, fontSize: 13, cursor: "pointer"
+                  background: "none", border: "none", color: "var(--flag)", fontSize: 13, cursor: "pointer"
                 }}
               >
-                {saving ? "Saving…" : "Save corrections"}
+                Delete invoice
               </button>
-            )}
+
+              {isFlagged && (
+                <button
+                  onClick={handleSaveCorrections}
+                  disabled={saving}
+                  style={{
+                    padding: "8px 16px", background: "var(--sage)", color: "white", border: "none",
+                    borderRadius: 4, fontFamily: "Inter", fontWeight: 500, fontSize: 13, cursor: "pointer"
+                  }}
+                >
+                  {saving ? "Saving…" : "Save corrections"}
+                </button>
+              )}
+              {result.validation_status === "valid" && !result.linked_to_ledger && (
+                <button
+                  onClick={handleConfirm}
+                  disabled={confirming}
+                  style={{
+                    padding: "8px 16px", background: "var(--sage)", color: "white", border: "none",
+                    borderRadius: 4, fontFamily: "Inter", fontWeight: 500, fontSize: 13, cursor: "pointer"
+                  }}
+                >
+                  {confirming ? "Adding…" : "Confirm & add to ledger"}
+                </button>
+              )}
+            </div>
           </div>
+
+          {result.linked_to_ledger && (
+            <p style={{ fontSize: 13, color: "var(--sage)", marginTop: -12, marginBottom: 16 }}>
+              ✓ Added to ledger
+            </p>
+          )}
 
           {fields.map(([key, value]) => (
             <div key={key} style={{
@@ -192,21 +215,15 @@ export default function UploadReview() {
               <span style={{ color: "var(--ink-soft)", fontSize: 14, textTransform: "capitalize" }}>
                 {LABELS[key] || key.replace(/_/g, " ")}
               </span>
-              {isFlagged ? (
-                <input
-                  className="mono"
-                  value={value === null ? "" : value}
-                  onChange={(e) => handleFieldChange(key, e.target.value)}
-                  style={{
-                    fontSize: 14, textAlign: "right", border: "1px solid var(--rule)",
-                    borderRadius: 4, padding: "4px 8px", width: 200, fontFamily: "IBM Plex Mono"
-                  }}
-                />
-              ) : (
-                <span className="mono" style={{ fontSize: 14 }}>
-                  {value === null ? "—" : String(value)}
-                </span>
-              )}
+              <input
+                className="mono"
+                value={value === null ? "" : value}
+                onChange={(e) => handleFieldChange(key, e.target.value)}
+                style={{
+                  fontSize: 14, textAlign: "right", border: "1px solid var(--rule)",
+                  borderRadius: 4, padding: "4px 8px", width: 200, fontFamily: "IBM Plex Mono"
+                }}
+              />
             </div>
           ))}
         </div>
