@@ -50,12 +50,12 @@ Small distribution businesses in India often track supplier and buyer accounts m
 
 ### Backend
 \`\`\`bash
-python -m venv venv
-venv\Scripts\Activate.ps1   # Windows
-pip install -r requirements.txt
-add a .env file with DATABASE_URL and GEMINI_API_KEY
-python init_db.py
-uvicorn main:app --reload
+-python -m venv venv
+-venv\Scripts\Activate.ps1   # Windows
+-pip install -r requirements.txt
+-add a .env file with DATABASE_URL and GEMINI_API_KEY
+-python init_db.py
+-uvicorn main:app --reload
 \`\`\`
 
 ### Frontend
