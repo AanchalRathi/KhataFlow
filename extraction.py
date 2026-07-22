@@ -1,4 +1,5 @@
 from google import genai
+from google.genai.errors import ServerError
 import os
 import json
 from dotenv import load_dotenv
@@ -39,10 +40,13 @@ def extract_from_printed_text(raw_text: str) -> dict:
         doc_type="printed invoice",
         content_section=f"Raw OCR text:\n{raw_text}"
     )
-    response = client.models.generate_content(
-        model="gemini-flash-latest",
-        contents=prompt
-    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-flash-latest",
+            contents=prompt
+        )
+    except ServerError:
+        raise ValueError("The AI service is temporarily busy. Please try again in a minute.")
     cleaned = response.text.strip().replace("```json", "").replace("```", "")
     return json.loads(cleaned)
 

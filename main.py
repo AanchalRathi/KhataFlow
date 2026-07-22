@@ -100,12 +100,16 @@ async def upload_invoice(
             raw_text = None
             try:
                 extracted_data = extract_from_handwritten_image(temp_path)
+            except ValueError as e:
+                return {"error": str(e)}
             except json_lib.JSONDecodeError:
                 return {"error": "Could not read structured data from this document. Try a clearer photo."}
         else:
             raw_text = extract_text_from_image(temp_path)
             try:
                 extracted_data = extract_from_printed_text(raw_text)
+            except ValueError as e:
+                return {"error": str(e)}
             except json_lib.JSONDecodeError:
                 return {"error": "Could not read structured data from this document. Try a clearer scan."}
 
