@@ -49,7 +49,7 @@ Small distribution businesses in India often track supplier and buyer accounts m
 ## Setup
 
 ### Backend
-\`\`\`bash
+
 -python -m venv venv
 
 -venv\Scripts\Activate.ps1   # Windows
@@ -62,14 +62,14 @@ Small distribution businesses in India often track supplier and buyer accounts m
 
 -uvicorn main:app --reload
 
-\`\`\`
+
 
 ### Frontend
-\`\`\`bash
+
 cd frontend
 npm install
 npm run dev
-\`\`\`
+
 
 ## Current status
 
